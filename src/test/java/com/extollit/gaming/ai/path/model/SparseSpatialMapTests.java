@@ -2,16 +2,16 @@ package com.extollit.gaming.ai.path.model;
 
 import net.jqwik.api.*;
 import net.jqwik.api.constraints.Size;
-import net.jqwik.api.constraints.Unique;
+import net.jqwik.api.constraints.UniqueElements;
 
 import java.util.*;
 
 public class SparseSpatialMapTests {
     @Property(tries = 50000)
-    public boolean complex(@ForAll @Size(min = 10, max = 50) List<@From("value") @Unique TestNodeValue> init,
-                           @ForAll @Size(min = 2, max = 50) List<@From("coord") @Unique Coords> remove,
-                           @ForAll @Size(min = 2, max = 20)  List<@From("value") @Unique TestNodeValue> more,
-                           @ForAll @Size(min = 2, max = 20) List<@From("coord") @Unique Coords> nerf) {
+    public boolean complex(@ForAll @Size(min = 10, max = 50) List<@From("value") @UniqueElements TestNodeValue> init,
+                           @ForAll @Size(min = 2, max = 50) List<@From("coord") @UniqueElements Coords> remove,
+                           @ForAll @Size(min = 2, max = 20)  List<@From("value") @UniqueElements TestNodeValue> more,
+                           @ForAll @Size(min = 2, max = 20) List<@From("coord") @UniqueElements Coords> nerf) {
         final SparseSpatialMap<TestNodeValue> sparse = new SparseSpatialMap<>();
         final Map<Coords, TestNodeValue> control = new HashMap<>();
 

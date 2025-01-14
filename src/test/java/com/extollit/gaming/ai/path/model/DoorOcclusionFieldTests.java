@@ -2,14 +2,14 @@ package com.extollit.gaming.ai.path.model;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static com.extollit.gaming.ai.path.TestingBlocks.door;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class DoorOcclusionFieldTests extends AbstractOcclusionFieldTesting {
     @Test
     public void offset() {

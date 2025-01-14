@@ -3,7 +3,7 @@ package com.extollit.gaming.ai.path.model;
 import org.junit.Before;
 
 import static com.extollit.gaming.ai.path.TestingBlocks.air;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

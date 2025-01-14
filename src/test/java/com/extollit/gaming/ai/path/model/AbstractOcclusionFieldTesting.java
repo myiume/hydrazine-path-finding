@@ -4,7 +4,7 @@ import org.junit.Before;
 
 import static com.extollit.gaming.ai.path.TestingBlocks.*;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 public class AbstractOcclusionFieldTesting extends AbstractOcclusionProviderTesting {

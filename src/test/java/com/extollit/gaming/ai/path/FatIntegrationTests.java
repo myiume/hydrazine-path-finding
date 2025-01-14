@@ -4,12 +4,12 @@ import com.extollit.gaming.ai.path.model.Coords;
 import com.extollit.gaming.ai.path.model.IPath;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static com.extollit.gaming.ai.path.model.PathObjectUtil.assertPath;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class FatIntegrationTests extends AbstractHydrazinePathFinderTests {
     @Test
     public void cornerStepDown() {

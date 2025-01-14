@@ -4,14 +4,14 @@ import com.extollit.gaming.ai.path.model.*;
 import com.extollit.gaming.ai.path.persistence.Persistence;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 
 import static com.extollit.gaming.ai.path.model.PathObjectUtil.assertPath;
 import static org.junit.Assert.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class HPODIntegrationTests extends AbstractHydrazinePathFinderTests {
     private final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 

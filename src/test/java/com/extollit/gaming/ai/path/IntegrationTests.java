@@ -4,14 +4,14 @@ import com.extollit.gaming.ai.path.model.*;
 import com.extollit.linalg.immutable.Vec3d;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static com.extollit.gaming.ai.path.model.PathObjectUtil.assertPath;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class IntegrationTests extends AbstractHydrazinePathFinderTests {
     @Test
     public void pathRiskyDown() {

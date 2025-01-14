@@ -1,5 +1,8 @@
 package com.extollit.gaming.ai.path.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A one-dimensional store for occlusion fields aligned along the y-axis distributed according to chunk coordinates.
  * Define an object of this class as a final field member of your concrete implementation of {@link IColumnarSpace} then
@@ -18,7 +21,12 @@ public class ColumnarOcclusionFieldList {
      */
     public final IColumnarSpace container;
 
-    private OcclusionField [] fields;
+    private final int maxHeight;
+    private final int minHeight;
+
+    private static final int DEFAULT_MAX_HEIGHT = 320;
+    private static final int DEFAULT_MIN_HEIGHT = -64;
+    private final Map<Integer, OcclusionField> fields = new HashMap<>();
 
     /**
      * Construct a new object bound to the specified columnar space container, this is what {@link #container} will be
@@ -28,6 +36,14 @@ public class ColumnarOcclusionFieldList {
      */
     public ColumnarOcclusionFieldList(IColumnarSpace container) {
         this.container = container;
+        this.minHeight = DEFAULT_MIN_HEIGHT;
+        this.maxHeight = DEFAULT_MAX_HEIGHT;
+    }
+
+    public ColumnarOcclusionFieldList(IColumnarSpace container, int minY, int maxY) {
+        this.container = container;
+        this.minHeight = minY;
+        this.maxHeight = maxY;
     }
 
     /**
@@ -37,7 +53,7 @@ public class ColumnarOcclusionFieldList {
      */
     @SuppressWarnings("unused")
     public void reset() {
-        this.fields = null;
+        this.fields.clear();
     }
 
     /**
@@ -56,33 +72,38 @@ public class ColumnarOcclusionFieldList {
      */
     @SuppressWarnings("unused")
     public void onBlockChanged(int x, int y, int z, IBlockDescription description, int metaData) {
-        final OcclusionField[] fields = this.fields;
-        if (fields == null)
-            return;
-
-        final OcclusionField field = fields[y >> 4 & 0xF];
-
-        if (field == null)
-            return;
-
-        field.set(this.container, x, y, z, description);
+        int cy = y >> 4; // Determine the Y-chunk index
+        OcclusionField field = fields.get(cy);
+        if (field != null) {
+            field.set(this.container, x, y, z, description); // Update the occlusion field
+        }
     }
 
-    public final OcclusionField occlusionFieldAt(int cx, int cy, int cz) {
-        OcclusionField[] fields = this.fields;
-        if (fields == null)
-            fields = this.fields = new OcclusionField[OcclusionField.DIMENSION_SIZE];
+    public OcclusionField occlusionFieldAt(int cx, int cy, int cz) {
+        int minChunkIndex = Math.floorDiv(minHeight, 16);
+        int maxChunkIndex = Math.floorDiv(maxHeight - 1, 16);
 
-        OcclusionField result = fields[cy];
-        if (result == null) {
-            final OcclusionField occlusionField = createOcclusionField(cx, cy, cz);
-            return fields[cy] = occlusionField;
-        } else
-            return result;
+        // Validate cy
+        if (cy < minChunkIndex || cy > maxChunkIndex) {
+            throw new IndexOutOfBoundsException("Chunk index out of bounds: cy=" + cy);
+        }
+
+        int chunkIndex = cy - minChunkIndex;
+
+        // Retrieve or create field
+        return fields.computeIfAbsent(chunkIndex, idx -> createOcclusionField(cx, cy, cz));
     }
 
-    public final OcclusionField optOcclusionFieldAt(int cy) {
-        return this.fields == null ? null : this.fields[cy];
+    public OcclusionField optOcclusionFieldAt(int cy) {
+        int minChunkIndex = Math.floorDiv(minHeight, 16);
+        int maxChunkIndex = Math.floorDiv(maxHeight - 1, 16);
+
+        if (cy < minChunkIndex || cy > maxChunkIndex) {
+            return null; // Out-of-bounds
+        }
+
+        int chunkIndex = cy - minChunkIndex;
+        return fields.get(chunkIndex);
     }
 
     public static OcclusionField optOcclusionFieldAt(IInstanceSpace instance, int cx, int cy, int cz) {

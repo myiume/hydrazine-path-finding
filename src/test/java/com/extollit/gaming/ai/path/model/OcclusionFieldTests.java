@@ -5,11 +5,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 
 import static com.extollit.gaming.ai.path.TestingBlocks.*;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.leq;
 import static org.mockito.AdditionalMatchers.lt;
 import static org.mockito.Mockito.when;
@@ -590,5 +589,211 @@ public class OcclusionFieldTests extends AbstractOcclusionFieldTesting {
 
         assertTrue(Element.fire.in(flags));
         assertTrue(Logic.doorway.in(flags));
+    }
+
+    @Test
+    public void testDynamicHeightBoundaries() {
+        int minY = -64;
+        int maxY = 320;
+
+        // Initialize the ColumnarOcclusionFieldList with dynamic height range
+        ColumnarOcclusionFieldList fieldList = new ColumnarOcclusionFieldList(centerSpace, minY, maxY);
+
+        // Access the OcclusionField at the minimum chunk index
+        OcclusionField minField = fieldList.occlusionFieldAt(0, minY >> 4, 0);
+        // Set and retrieve a block at minY
+        minField.set(centerSpace, 0, minY, 0, stone);
+        assertTrue(Element.earth.in(minField.elementAt(0, 0, 0)));
+
+        // Access the OcclusionField at the maximum chunk index
+        OcclusionField maxField = fieldList.occlusionFieldAt(0, (maxY - 1) >> 4, 0);
+        // Set and retrieve a block at maxY - 1
+        maxField.set(centerSpace, 0, maxY - 1, 0, stone);
+        assertTrue(Element.earth.in(maxField.elementAt(0, 15, 0)));
+    }
+
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testBoundaryValidation() {
+        ColumnarOcclusionFieldList fieldList = new ColumnarOcclusionFieldList(centerSpace, -64, 320);
+
+        // Access out-of-bounds chunk index
+        fieldList.occlusionFieldAt(0, Math.floorDiv(321, 16), 0);
+    }
+
+
+    @Test
+    public void testDynamicHeightRangeWithEdgeCases() {
+        int[][] testRanges = {
+                {-64, 320},    // Overworld range
+                {0, 256},      // Nether range
+                {-1000, 1000}, // Large custom range
+                {-30, 30},     // Small range
+                {1000, 1016}   // High altitude small range
+        };
+
+        for (int[] range : testRanges) {
+            int minY = range[0];
+            int maxY = range[1];
+
+            System.out.println("\nTesting range: [" + minY + ", " + maxY + "]");
+
+            ColumnarOcclusionFieldList fieldList = new ColumnarOcclusionFieldList(centerSpace, minY, maxY);
+
+            System.out.println("minY chunk index: " + (minY >> 4));
+            System.out.println("maxY - 1 chunk index: " + ((maxY - 1) >> 4));
+
+            OcclusionField minField = fieldList.occlusionFieldAt(0, minY >> 4, 0);
+            int minDy = minY & 15; // Normalize Y within chunk
+            minField.set(centerSpace, 0, minY, 0, stone);
+            assertTrue("Min field failed at minY=" + minY, Element.earth.in(minField.elementAt(0, minDy, 0)));
+
+            OcclusionField maxField = fieldList.occlusionFieldAt(0, (maxY - 1) >> 4, 0);
+            int maxDy = (maxY - 1) & 15; // Normalize Y within chunk
+            maxField.set(centerSpace, 0, maxY - 1, 0, stone);
+            assertTrue("Max field failed at maxY=" + maxY, Element.earth.in(maxField.elementAt(0, maxDy, 0)));
+        }
+    }
+
+    @Test
+    public void testDynamicHeightVariousRanges() {
+        int[][] testRanges = {
+                {-64, 320},   // Standard Overworld range
+                {0, 256},     // Nether-like range
+                {-1000, 1000},// High custom range
+                {-30, 30},    // Small custom range
+        };
+
+        for (int[] range : testRanges) {
+            int minY = range[0];
+            int maxY = range[1];
+
+            System.out.println("\nTesting range: [" + minY + ", " + maxY + "]");
+
+            // Initialize the ColumnarOcclusionFieldList
+            ColumnarOcclusionFieldList fieldList = new ColumnarOcclusionFieldList(centerSpace, minY, maxY);
+
+            // Log chunk indices for debugging
+            System.out.println("minY chunk index: " + (minY >> 4));
+            System.out.println("maxY - 1 chunk index: " + ((maxY - 1) >> 4));
+
+            // Test minY
+            OcclusionField minField = fieldList.occlusionFieldAt(0, minY >> 4, 0);
+            int minDy = minY & 15; // Normalize Y within the chunk
+            minField.set(centerSpace, 0, minY, 0, stone);
+            assertTrue("Failed for minY: " + minY, Element.earth.in(minField.elementAt(0, minDy, 0)));
+
+            // Test maxY - 1
+            OcclusionField maxField = fieldList.occlusionFieldAt(0, (maxY - 1) >> 4, 0);
+            int maxDy = (maxY - 1) & 15; // Normalize Y within the chunk
+            maxField.set(centerSpace, 0, maxY - 1, 0, stone);
+            assertTrue("Failed for maxY: " + maxY, Element.earth.in(maxField.elementAt(0, maxDy, 0)));
+        }
+    }
+
+    @Test
+    public void testOptOcclusionFieldAt() {
+        int minY = -64;
+        int maxY = 320;
+
+        // Initialize the ColumnarOcclusionFieldList
+        ColumnarOcclusionFieldList fieldList = new ColumnarOcclusionFieldList(centerSpace, minY, maxY);
+
+        // Test valid range
+        OcclusionField validField = fieldList.optOcclusionFieldAt((maxY - 1) >> 4);
+        assertNull("Expected null for uncreated field in valid range", validField);
+
+        // Test out-of-bounds range
+        OcclusionField outOfBoundsField = fieldList.optOcclusionFieldAt(Math.floorDiv(maxY, 16) + 1);
+        assertNull("Expected null for out-of-bounds field", outOfBoundsField);
+    }
+
+    @Test
+    public void testMidRangePlacements() {
+        int[][] testRanges = {
+                {-64, 320},
+                {0, 256},
+                {-1000, 1000},
+                {1000, 2000}
+        };
+
+        for (int[] range : testRanges) {
+            int minY = range[0];
+            int maxY = range[1];
+            int midY = (minY + maxY) / 2;
+
+            ColumnarOcclusionFieldList fieldList = new ColumnarOcclusionFieldList(centerSpace, minY, maxY);
+
+            OcclusionField midField = fieldList.occlusionFieldAt(0, midY >> 4, 0);
+            int midDy = midY & 15; // Normalize Y within the chunk
+
+            midField.set(centerSpace, 0, midY, 0, stone);
+
+            assertTrue("Failed at midY=" + midY, Element.earth.in(midField.elementAt(0, midDy, 0)));
+        }
+    }
+
+    @Test
+    public void testEdgeCasesForCustomRanges() {
+        int[][] edgeCases = {
+                {-16, 16}, // Very small range
+                {-2032, -2020}, // Small negative range
+                {0, 16}, // Single chunk range
+                {1000, 1016}, // High altitude small range
+        };
+
+        for (int[] range : edgeCases) {
+            int minY = range[0];
+            int maxY = range[1];
+
+            // Initialize the ColumnarOcclusionFieldList
+            ColumnarOcclusionFieldList fieldList = new ColumnarOcclusionFieldList(centerSpace, minY, maxY);
+
+            // Validate the fields for minY and maxY - 1
+            OcclusionField minField = fieldList.occlusionFieldAt(0, minY >> 4, 0);
+            OcclusionField maxField = fieldList.occlusionFieldAt(0, (maxY - 1) >> 4, 0);
+
+            assertNotNull("Min field should be initialized", minField);
+            assertNotNull("Max field should be initialized", maxField);
+        }
+    }
+
+    @Test
+    public void testEnhancedOptOcclusionFieldAt() {
+        int minY = -64;
+        int maxY = 320;
+
+        // Initialize the ColumnarOcclusionFieldList
+        ColumnarOcclusionFieldList fieldList = new ColumnarOcclusionFieldList(centerSpace, minY, maxY);
+
+        // Test valid range but uninitialized field
+        int validChunkIndex = (maxY - 1) >> 4;
+        OcclusionField validField = fieldList.optOcclusionFieldAt(validChunkIndex);
+        assertNull("Expected null for uninitialized field in valid range", validField);
+
+        // Create and retrieve a field
+        fieldList.occlusionFieldAt(0, validChunkIndex, 0);
+        validField = fieldList.optOcclusionFieldAt(validChunkIndex);
+        assertNotNull("Expected initialized field in valid range", validField);
+
+        // Test out-of-bounds negative range
+        int outOfBoundsLow = Math.floorDiv(minY, 16) - 1;
+        OcclusionField outOfBoundsFieldLow = fieldList.optOcclusionFieldAt(outOfBoundsLow);
+        assertNull("Expected null for out-of-bounds low range", outOfBoundsFieldLow);
+
+        // Test out-of-bounds positive range
+        int outOfBoundsHigh = Math.floorDiv(maxY, 16) + 1;
+        OcclusionField outOfBoundsFieldHigh = fieldList.optOcclusionFieldAt(outOfBoundsHigh);
+        assertNull("Expected null for out-of-bounds high range", outOfBoundsFieldHigh);
+
+        // Test mid-range retrieval
+        int midChunkIndex = (minY + maxY) / 32; // Average Y normalized to chunk index
+        OcclusionField midField = fieldList.optOcclusionFieldAt(midChunkIndex);
+        assertNull("Expected null for uninitialized mid-range field", midField);
+
+        // Initialize mid-range and verify retrieval
+        fieldList.occlusionFieldAt(0, midChunkIndex, 0);
+        midField = fieldList.optOcclusionFieldAt(midChunkIndex);
+        assertNotNull("Expected initialized field in mid-range", midField);
     }
 }
